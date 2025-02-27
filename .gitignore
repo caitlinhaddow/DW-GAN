@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+weights/res2net101_v1b_26w_4s-0812c246.pth
+weights/dw_gan_best.pkl
+weights/dehaze.pkl
