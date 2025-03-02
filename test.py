@@ -21,42 +21,71 @@ output_dir =args.output_dir
 test_dataset = dehaze_test_dataset(test_dir)
 test_loader = DataLoader(dataset=test_dataset, batch_size=test_batch_size, shuffle=False, num_workers=0)
 
-# --- Gpu device --- #
-# device_ids = [Id for Id in range(torch.cuda.device_count())]
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# # --- Define the network --- #
-# net = fusion_net()
+multiple_gpus = True  ## SET VARIABLE (Code by Caitlin)
+if multiple_gpus:
+    ##### Original code
+    # # --- Gpu device --- #
+    # device_ids = [Id for Id in range(torch.cuda.device_count())]
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# --- Multi-GPU --- #
-# net = net.to(device)
-# net = nn.DataParallel(net)
-# net.load_state_dict(torch.load('./weights/dehaze.pkl'))
+    # # --- Define the network --- #
+    # net = fusion_net()
 
-################## Code by Caitlin to get around parallel GPU requirement.
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-net = fusion_net().to(device)
+    # # --- Multi-GPU --- #
+    # net = net.to(device)
+    # net = nn.DataParallel(net)
+    # net.load_state_dict(torch.load('./weights/dehaze.pkl'))
 
-# Load checkpoint
-ckpt_path = './weights/dehaze.pkl'
-from collections import OrderedDict
-checkpoint = torch.load(ckpt_path, map_location=device)  # Ensure checkpoint is loaded on correct device
+    ################## Code by Caitlin to use given pkl file with parallel GPUs.
 
-if "model_state_dict" in checkpoint:
-    state_dict = checkpoint["model_state_dict"]  # Extract the actual state dict
+    # --- Gpu device --- #
+    device_ids = [Id for Id in range(torch.cuda.device_count())]
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
+    # --- Define the network --- #
+    net = fusion_net().to(device)
+
+    # Load checkpoint first, without wrapping in DataParallel
+    checkpoint = torch.load('./weights/dehaze.pkl', map_location=device)
+
+    # If saved state_dict contains "model_state_dict" key, extract it
+    if "model_state_dict" in checkpoint:
+        checkpoint = checkpoint["model_state_dict"]
+
+    # Load state dict into the model
+    net.load_state_dict(checkpoint)
+
+    # Now wrap in DataParallel
+    net = nn.DataParallel(net, device_ids=device_ids)
+
+
 else:
-    state_dict = checkpoint  # Direct state_dict case
+    print("Using single GPU only")
+    ################## Code by Caitlin to get around parallel GPU requirement.
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    net = fusion_net().to(device)
 
-# Remove "module." prefix if it exists
-new_state_dict = OrderedDict()
-for k, v in state_dict.items():
-    new_key = k.replace("module.", "") if k.startswith("module.") else k
-    new_state_dict[new_key] = v
+    # Load checkpoint
+    ckpt_path = './weights/dehaze.pkl'
+    from collections import OrderedDict
+    checkpoint = torch.load(ckpt_path, map_location=device)  # Ensure checkpoint is loaded on correct device
 
-# Load state dict into model
-net.load_state_dict(new_state_dict)
-# net = net.to(device)
-##################
+    if "model_state_dict" in checkpoint:
+        state_dict = checkpoint["model_state_dict"]  # Extract the actual state dict
+    else:
+        state_dict = checkpoint  # Direct state_dict case
+
+    # Remove "module." prefix if it exists
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        new_key = k.replace("module.", "") if k.startswith("module.") else k
+        new_state_dict[new_key] = v
+
+    # Load state dict into model
+    net.load_state_dict(new_state_dict)
+    # net = net.to(device)
+    ##################
 
 
 # --- Test --- #
@@ -75,7 +104,8 @@ with torch.no_grad():
         # imwrite(frame_out, output_dir + '/' + str(name[0])+'.png', range=(0, 1))
 
         ######## Code by Caitlin #################
-        imwrite(frame_out, os.path.join(output_dir, f"{name}.png"), range=(0, 1))
+
+        imwrite(frame_out, os.path.join(output_dir, str(name[0])), range=(0, 1))
 
         ##########################################
 
