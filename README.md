@@ -4,6 +4,7 @@ File structure for training
 - training_data directory containing clean and hazy directories, and train.txt
 - added train_dataset.py based on file from ITBDehaze
 - check_points (where models saved to during training)
+- added .py file for generating the txts
 
 # DW-GAN: A discrete wavelet transform GAN for NonHomogenous Image Dehazing - NTIRE 2021
 
