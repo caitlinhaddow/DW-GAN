@@ -1,3 +1,10 @@
+# CH Notes
+File structure for training
+- test_data directory containing clean and hazy directories, and test.txt
+- training_data directory containing clean and hazy directories, and train.txt
+- added train_dataset.py based on file from ITBDehaze
+- check_points (where models saved to during training)
+
 # DW-GAN: A discrete wavelet transform GAN for NonHomogenous Image Dehazing - NTIRE 2021
 
 This is the official PyTorch implementation of DW-GAN.  

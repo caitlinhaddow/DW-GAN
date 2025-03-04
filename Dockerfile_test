@@ -23,14 +23,14 @@ CMD ["bash", "-c", "python test.py --test_dir '/DW-GAN/input_data/'"]
 #     --mount type=bind,source=/homes/ceh94/DW-GAN/input_data,target=/DW-GAN/input_data \
 #     ceh94/dwimg
 
-hare run --rm --gpus device=3 \
---mount type=bind,source=/homes/ceh94/DW-GAN/weights,target=/DW-GAN/weights \
---mount type=bind,source=/homes/ceh94/DW-GAN/output_result,target=/DW-GAN/output_result \
---mount type=bind,source=/homes/ceh94/DW-GAN/input_data,target=/DW-GAN/input_data \
-ceh94/dwimg
+# hare run --rm --gpus device=3 \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/weights,target=/DW-GAN/weights \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/output_result,target=/DW-GAN/output_result \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/input_data,target=/DW-GAN/input_data \
+# ceh94/dwimg
 
-hare run --rm --gpus '"device=1,4"' \
---mount type=bind,source=/homes/ceh94/DW-GAN/weights,target=/DW-GAN/weights \
---mount type=bind,source=/homes/ceh94/DW-GAN/output_result,target=/DW-GAN/output_result \
---mount type=bind,source=/homes/ceh94/DW-GAN/input_data,target=/DW-GAN/input_data \
-ceh94/dwimg
+# hare run --rm --gpus '"device=1,4"' \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/weights,target=/DW-GAN/weights \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/output_result,target=/DW-GAN/output_result \
+# --mount type=bind,source=/homes/ceh94/DW-GAN/input_data,target=/DW-GAN/input_data \
+# ceh94/dwimg

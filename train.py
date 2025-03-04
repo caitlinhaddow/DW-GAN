@@ -1,6 +1,7 @@
 import torch
 import time
 import argparse
+import datetime
 from model import fusion_net, Discriminator
 from train_dataset import dehaze_train_dataset
 from test_val_dataset import dehaze_test_dataset
@@ -14,17 +15,21 @@ from torchvision.utils import save_image as imwrite
 from pytorch_msssim import msssim
 from perceptual import LossNetwork
 
+script_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+print(f"--- Start time: {script_start_time} ---")
+torch.cuda.empty_cache() ## ch added
+
 # --- Parse hyper-parameters train --- #
 parser = argparse.ArgumentParser(description='DW-GAN Dehaze')
 parser.add_argument('-learning_rate', help='Set the learning rate', default=1e-4, type=float)
-parser.add_argument('-train_batch_size', help='Set the training batch size', default=25, type=int)
+parser.add_argument('-train_batch_size', help='Set the training batch size', default=4, type=int)  ## originally 25
 parser.add_argument('-train_epoch', help='Set the training epoch', default=10000, type=int)
-parser.add_argument('--train_dataset', type=str, default='')
+parser.add_argument('--train_dataset', type=str, default='./training_data/')
 parser.add_argument('--data_dir', type=str, default='')
 parser.add_argument('--model_save_dir', type=str, default='./check_points')
 parser.add_argument('--log_dir', type=str, default=None)
 # --- Parse hyper-parameters test --- #
-parser.add_argument('--test_dataset', type=str, default='')
+parser.add_argument('--test_dataset', type=str, default='./test_data/')
 parser.add_argument('--predict_result', type=str, default='./output_result/picture/')
 parser.add_argument('-test_batch_size', help='Set the testing batch size', default=1, type=int)
 args = parser.parse_args()
@@ -32,9 +37,11 @@ args = parser.parse_args()
 learning_rate = args.learning_rate
 train_batch_size = args.train_batch_size
 train_epoch = args.train_epoch
-train_dataset = os.path.join('/your/path/')
+# train_dataset = os.path.join('/your/path/')
+train_dataset = args.train_dataset
 # --- test --- #
-test_dataset = os.path.join('/your/path/')
+# test_dataset = os.path.join('/your/path/')
+test_dataset = args.test_dataset
 predict_result = args.predict_result
 test_batch_size = args.test_batch_size
 
@@ -51,6 +58,20 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 MyEnsembleNet = fusion_net()
 print('MyEnsembleNet parameters:', sum(param.numel() for param in MyEnsembleNet.parameters()))
 DNet = Discriminator()
+
+########### CH New code
+
+if torch.cuda.device_count() > 1:
+    print(f"Using {torch.cuda.device_count()} GPUs")
+    MyEnsembleNet = torch.nn.DataParallel(MyEnsembleNet, device_ids=device_ids).to(device)
+    DNet = torch.nn.DataParallel(DNet, device_ids=device_ids).to(device)
+else:
+    print(f"Using {torch.cuda.device_count()} GPUs")
+    MyEnsembleNet = MyEnsembleNet.to(device)
+    DNet = DNet.to(device)
+
+###################
+
 # --- Build optimizer --- #
 G_optimizer = torch.optim.Adam(MyEnsembleNet.parameters(), lr=0.0001)
 scheduler_G = torch.optim.lr_scheduler.MultiStepLR(G_optimizer, milestones=[3000, 5000, 8000], gamma=0.5)
@@ -80,6 +101,7 @@ loss_network = LossNetwork(vgg_model)
 loss_network.eval()
 msssim_loss = msssim
 # --- Strat training --- #
+print("strat training")
 iteration = 0
 best_psnr = 0
 for epoch in range(train_epoch):
@@ -88,6 +110,7 @@ for epoch in range(train_epoch):
     scheduler_D.step()
     MyEnsembleNet.train()
     DNet.train()
+    
     for batch_idx, (hazy, clean) in enumerate(train_loader):
         iteration += 1
         hazy = hazy.to(device)
@@ -140,5 +163,7 @@ for epoch in range(train_epoch):
                                            'testing ssim': avr_ssim}, epoch)
             if avr_psnr > best_psnr:
                 print(f"New best PSNR achieved: {avr_psnr}. Saving model...")
-                torch.save(MyEnsembleNet.state_dict(), os.path.join(args.model_save_dir, 'epoch' + str(epoch) + '.pkl'))
+                torch.save(MyEnsembleNet.state_dict(), os.path.join(args.model_save_dir, f"{script_start_time}_epoch{str(epoch)}.pkl"))
                 best_psnr = avr_psnr
+end_time = datetime.datetime.now()
+print(f"End time {end_time}, Total duration: {end_time - start_time}")
