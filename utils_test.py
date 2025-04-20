@@ -34,8 +34,8 @@ def to_ssim_skimage(dehaze, gt):
 
     ########
 
-    # ssim_list = [ssim(dehaze_list_np[ind],  gt_list_np[ind], data_range=1, multichannel=True) for ind in range(len(dehaze_list))]
-    ssim_list = [ssim(dehaze_list_np[ind],  gt_list_np[ind], data_range=1, multichannel=True, win_size=3) for ind in range(len(dehaze_list))]  ## CH New code
+    ssim_list = [ssim(dehaze_list_np[ind],  gt_list_np[ind], data_range=1, multichannel=True, channel_axis=2) for ind in range(len(dehaze_list))]
+    # ssim_list = [ssim(dehaze_list_np[ind],  gt_list_np[ind], data_range=1, multichannel=True, win_size=3) for ind in range(len(dehaze_list))]  ## CH New code, changed window size from 7 to 3
     return ssim_list
 
 def to_rmse(dehaze, gt):

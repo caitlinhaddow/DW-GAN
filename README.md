@@ -6,6 +6,12 @@ File structure for training
 - check_points (where models saved to during training)
 - added .py file for generating the txts
 
+Original authors trained using
+- 2 GPUs (nvidia 1080Ti gpu, assumed 11GB each)
+- 8000 epochs, batch size 16
+- Random data augmentation (90, 180, 270 rotation and horizontal flip)
+- Achieved final performance with a mix of NH-Haze (gamma corrected) and NHHaze2
+
 # DW-GAN: A discrete wavelet transform GAN for NonHomogenous Image Dehazing - NTIRE 2021
 
 This is the official PyTorch implementation of DW-GAN.  
